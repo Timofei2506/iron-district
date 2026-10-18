@@ -1,0 +1,63 @@
+name: Build Iron District
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: StandaloneWindows64
+            method: IronDistrict.EditorTools.CiBuild.BuildWindows
+          - target: StandaloneLinux64
+            method: IronDistrict.EditorTools.CiBuild.BuildLinux
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Cache Library
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-${{ matrix.target }}-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: |
+            Library-${{ matrix.target }}-
+            Library-
+
+      # ------------------------------------------------------------------
+      # Добавь в Settings -> Secrets and variables -> Actions:
+      #   UNITY_LICENSE  — содержимое файла .ulf (Personal/Plus/Pro)
+      #   UNITY_EMAIL    — почта Unity-аккаунта
+      #   UNITY_PASSWORD — пароль Unity-аккаунта
+      #   UNITY_SERIAL   — только для Plus/Pro
+      # ------------------------------------------------------------------
+      - name: Build with Unity
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+        with:
+          unityVersion: 2022.3.22f1
+          targetPlatform: ${{ matrix.target }}
+          buildMethod: ${{ matrix.method }}
+          allowDirtyBuild: true
+
+      - name: Upload ${{ matrix.target }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: IronDistrict-${{ matrix.target }}
+          path: build/${{ matrix.target }}
+          if-no-files-found: warn
+          retention-days: 30
