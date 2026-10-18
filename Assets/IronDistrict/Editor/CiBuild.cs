@@ -112,12 +112,26 @@ namespace IronDistrict.EditorTools
                 var summary = report.summary;
                 Debug.Log($"[CiBuild] result={summary.result} size={summary.totalSize / (1024 * 1024)} MB errors={summary.totalErrors} time={summary.totalTime}");
 
-                if (summary.result != BuildResult.Succeeded)
+                if (summary.result == BuildResult.Succeeded)
                 {
-                    Exit(1);
-                    throw new Exception("[CiBuild] Unity build failed: " + summary.result);
+                    // game-ci/cli validates the build by looking for this exact marker
+                    // in the Unity log (see UnityBuildValidation.validateBuild in game-ci/cli).
+                    Debug.Log("Build succeeded!");
+                    Debug.Log(
+                        "###########################\n" +
+                        "#      Build results      #\n" +
+                        "###########################\n" +
+                        "Result: Succeeded\n" +
+                        $"Total time: {summary.totalTime}\n" +
+                        $"Total size: {summary.totalSize} bytes\n" +
+                        "Errors: 0\n" +
+                        "Warnings: 0");
+                    Exit(0);
                 }
-                Exit(0);
+
+                Debug.Log("Build failed, see log above for details.");
+                Exit(1);
+                throw new Exception("[CiBuild] Unity build failed: " + summary.result);
             }
             catch (Exception e)
             {

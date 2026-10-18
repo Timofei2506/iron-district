@@ -68,6 +68,7 @@ jobs:
       # Публикация билда в Cloudflare R2 (работает после включения R2 в дашборде
       # и добавления секретов R2_* — см. README, раздел «Cloudflare R2»).
       - name: Publish to Cloudflare R2
+        continue-on-error: true
         env:
           R2_KEY: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET: ${{ secrets.R2_SECRET_ACCESS_KEY }}
