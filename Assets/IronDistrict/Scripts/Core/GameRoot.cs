@@ -36,6 +36,7 @@ namespace IronDistrict
             Application.targetFrameRate = 240;
             QualitySettings.vSyncCount = 0;
 
+            GameBootstrap.EnsureEventSystem();
             ApplyPerformanceSettings();
 
             InputService.Sensitivity = PlayerPrefs.GetFloat("IrD_Sens", 1f);
@@ -156,6 +157,7 @@ namespace IronDistrict
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
             Time.timeScale = 1f;
+            InputService.I?.ArmGrace(0.35f); // клик по кнопке меню не должен стрелять
             Sfx.SetAmbientVolume(0.5f);
         }
 
@@ -247,7 +249,9 @@ namespace IronDistrict
                     else if (Input.GetKeyDown(KeyCode.Escape)) ShowMenu();
                     break;
                 case GameState.Menu:
-                    if (Input.GetKeyDown(KeyCode.Return))
+                    // Enter / Space / Numpad Enter start the run even if uGUI events fail
+                    if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) ||
+                        Input.GetKeyDown(KeyCode.Space))
                     {
                         StartGame();
                     }

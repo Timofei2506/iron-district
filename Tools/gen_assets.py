@@ -162,7 +162,7 @@ TextureImporter:
 
 
 # ---------------------------------------------------------------- textures
-def concrete(name, s=512, base=(0.42, 0.42, 0.44), seed=1, moss=0.06):
+def concrete(name, s=512, base=(0.36, 0.355, 0.35), seed=1, moss=0.05):
     n1 = fbm(s, 4, 5, seed)
     n2 = fbm(s, 16, 3, seed + 1)
     pits = (fbm(s, 64, 2, seed + 2) > 0.72).astype(np.float32)
@@ -181,7 +181,7 @@ def asphalt(name, s=512, seed=11):
     n1 = fbm(s, 6, 6, seed)
     n2 = fbm(s, 48, 3, seed + 1)
     stones = (n2 > 0.68).astype(np.float32) * 0.12
-    base = 0.20 + 0.10 * n1 + stones
+    base = 0.17 + 0.09 * n1 + stones
     crack = np.abs(fbm(s, 5, 3, seed + 9) - 0.5)
     crack = np.clip((0.03 - crack) * 22, 0, 1)
     base = base * (1 - crack * 0.75)
@@ -191,7 +191,7 @@ def asphalt(name, s=512, seed=11):
 
 
 def facade(name, s=512, seed=21, brick=False):
-    wall = fbm(s, 8, 5, seed) * 0.18 + 0.30
+    wall = fbm(s, 8, 5, seed) * 0.16 + 0.255
     # concrete panel seams + per-panel tone
     yy, xx = np.mgrid[0:s, 0:s]
     ph, pw = s // 4, s // 2
@@ -253,10 +253,10 @@ def grass(name, s=512, seed=51):
     n1 = fbm(s, 6, 6, seed)
     n2 = fbm(s, 64, 3, seed + 1)
     blades = (fbm(s, 96, 2, seed + 4) > 0.62).astype(np.float32)
-    g = 0.20 + 0.22 * n1 + 0.10 * blades
-    dirt = np.clip((fbm(s, 3, 4, seed + 8) - 0.55) * 4, 0, 1)
-    col = np.dstack([g * 0.55 + dirt * 0.25, g * 0.95, g * 0.38])
-    col = np.clip(col + 0.03 * n2[..., None], 0, 1)
+    g = 0.155 + 0.17 * n1 + 0.075 * blades
+    dirt = np.clip((fbm(s, 3, 4, seed + 8) - 0.5) * 3.2, 0, 1)
+    col = np.dstack([g * 0.70 + dirt * 0.22, g * 0.80, g * 0.42])
+    col = np.clip(col + 0.018 * n2[..., None], 0, 1)
     rough = np.clip(0.8 + 0.15 * n2, 0, 1)
     save_tex(name, col, normal_strength=1.6, rough01=rough)
 
@@ -264,7 +264,7 @@ def grass(name, s=512, seed=51):
 def dirt(name, s=512, seed=61):
     n1 = fbm(s, 5, 6, seed)
     n2 = fbm(s, 40, 3, seed + 1)
-    col = np.dstack([0.30 + 0.16 * n1, 0.24 + 0.13 * n1, 0.17 + 0.09 * n1])
+    col = np.dstack([0.245 + 0.13 * n1, 0.205 + 0.11 * n1, 0.155 + 0.08 * n1])
     peb = (n2 > 0.66).astype(np.float32) * 0.10
     col = np.clip(col + peb[..., None], 0, 1)
     rough = np.clip(0.92 + 0.06 * n1, 0, 1)
@@ -289,9 +289,9 @@ def crate_wood(name, s=512, seed=71):
 def sand(name, s=512, seed=81):
     n1 = fbm(s, 8, 5, seed)
     ripple = 0.5 + 0.5 * np.sin((np.mgrid[0:s, 0:s][0] * 0.11) + 4 * n1)
-    col = np.dstack([0.62 + 0.12 * n1 + 0.05 * ripple,
-                     0.55 + 0.10 * n1 + 0.04 * ripple,
-                     0.38 + 0.07 * n1 + 0.03 * ripple])
+    col = np.dstack([0.50 + 0.10 * n1 + 0.04 * ripple,
+                     0.46 + 0.09 * n1 + 0.035 * ripple,
+                     0.36 + 0.06 * n1 + 0.025 * ripple])
     rough = np.clip(0.9 + 0.05 * n1, 0, 1)
     save_tex(name, col, normal_strength=0.9, rough01=rough)
 

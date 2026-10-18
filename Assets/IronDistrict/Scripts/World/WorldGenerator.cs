@@ -169,6 +169,39 @@ namespace IronDistrict
             RoadX(-40f, 140f, 350f, 10f);      // industrial access
             RoadX(10f, -345f, -140f, 8f);      // village path
             RoadX(-95f, -345f, -140f, 6f);
+            BuildRoadMarkings();
+        }
+
+        void BuildRoadMarkings()
+        {
+            var mb = new MeshBuilder();
+            void Mark(float cx, float cz, float sizeX, float sizeZ)
+                => mb.AddQuad(new Vector3(cx, 0.045f, cz), Vector3.forward, Vector3.right, sizeZ, sizeX, 0.25f);
+
+            // avenue centre dashes + solid edge lines
+            for (float z = -455f; z <= 312f; z += 8f)
+                Mark(30f, z, 0.16f, 3.1f);
+            Mark(22.6f, (312f - 455f) * 0.5f, 0.12f, 767f);
+            Mark(37.4f, (312f - 455f) * 0.5f, 0.12f, 767f);
+
+            // cross street dashes (skip the junction)
+            for (float x = -455f; x <= 392f; x += 9f)
+            {
+                if (Mathf.Abs(x - 30f) < 12f) continue;
+                Mark(x, 170f, 3.1f, 0.16f);
+            }
+
+            // zebra crossings at the two junctions
+            foreach (float cz in new[] { 58f, 166f, 240f })
+                for (float x = 23.2f; x <= 36.8f; x += 1.25f)
+                    Mark(x, cz, 0.55f, 4.2f);
+
+            // stop lines
+            Mark(30f, 52.4f, 15f, 0.4f);
+            Mark(30f, 178f, 15f, 0.4f);
+
+            var go = Geo.MeshObj("RoadMarkings", root, mb.Build("markings"), new[] { AssetLibrary.RoadLine() });
+            go.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         }
 
         void RoadZ(float x, float z0, float z1, float w)
@@ -187,10 +220,19 @@ namespace IronDistrict
             float[] blockX = { -75f, -5f, 65f };
             float[] blockZ = { 82.5f, 137.5f, 202.5f, 262.5f };
 
-            // concrete pads
+            // raised concrete pads with curbs (reads as real city blocks)
+            var curbMat = AssetLibrary.Curb();
             foreach (var bx in blockX)
+            {
                 foreach (var bz in blockZ)
+                {
                     Geo.GroundRect("Pad", root, bx, bz, 58f, 64f, 0.021f, matConcreteDark, 0.06f);
+                    Geo.Box("CurbN", root, new Vector3(bx, 0.11f, bz + 32f), new Vector3(58f, 0.22f, 0.55f), curbMat);
+                    Geo.Box("CurbS", root, new Vector3(bx, 0.11f, bz - 32f), new Vector3(58f, 0.22f, 0.55f), curbMat);
+                    Geo.Box("CurbE", root, new Vector3(bx + 29f, 0.11f, bz), new Vector3(0.55f, 0.22f, 64f), curbMat);
+                    Geo.Box("CurbW", root, new Vector3(bx - 29f, 0.11f, bz), new Vector3(0.55f, 0.22f, 64f), curbMat);
+                }
+            }
 
             int idx = 0;
             foreach (var bx in blockX)
@@ -203,23 +245,22 @@ namespace IronDistrict
 
                     if (count == 1)
                     {
-                        float w = lerp(24f, 40f);
-                        float d = lerp(22f, 40f);
-                        float h = landmark ? lerp(52f, 96f) : lerp(16f, 44f);
-                        SpawnBuilding(bx + rand(-3f, 3f), bz + rand(-3f, 3f), w, d, h, landmark);
+                        // одна башня по центру квартала, лёгкий сдвиг по X
+                        float w = lerp(28f, 38f);
+                        float d = lerp(26f, 36f);
+                        float h = landmark ? lerp(54f, 98f) : lerp(18f, 46f);
+                        SpawnBuilding(bx + rand(-1.5f, 1.5f), bz + rand(-1.5f, 1.5f), w, d, h, landmark);
                     }
                     else
                     {
-                        bool splitX = randChance(0.5f);
+                        // два корпуса строго вдоль улицы, с одинаковым отступом от тротуара
                         for (int k = 0; k < 2; k++)
                         {
-                            float off = splitX ? (k == 0 ? -13f : 13f) : (k == 0 ? -13.5f : 13.5f);
-                            float w = splitX ? lerp(15f, 21f) : lerp(24f, 32f);
-                            float d = splitX ? lerp(24f, 34f) : lerp(15f, 20f);
-                            float h = landmark ? lerp(30f, 66f) : lerp(12f, 38f);
-                            float x = bx + (splitX ? off : 0f) + rand(-2f, 2f);
-                            float z = bz + (splitX ? 0f : off) + rand(-2f, 2f);
-                            SpawnBuilding(x, z, w, d, h, landmark && k == 0);
+                            float off = k == 0 ? -13.5f : 13.5f;
+                            float w = lerp(20f, 22f);
+                            float d = lerp(24f, 30f);
+                            float h = landmark ? lerp(34f, 68f) : lerp(14f, 40f);
+                            SpawnBuilding(bx + off, bz + rand(-1f, 1f), w, d, h, landmark && k == 0);
                         }
                     }
                     idx++;
@@ -236,9 +277,14 @@ namespace IronDistrict
             for (float z = 95f; z <= 285f; z += 47f)
                 WorldData.EnemySpawnPoints.Add(new Vector3(30f + rand(-14f, 14f), 0.2f, z));
 
-            // low-rise fringe along the boulevard south of downtown
-            SpawnBuilding(-4f, 34f, 26f, 18f, 9f, false);
-            SpawnBuilding(64f, 34f, 22f, 16f, 12f, false);
+            // аккуратный ряд низких домов вдоль бульвара к югу от даунтауна
+            for (int i = 0; i < 3; i++)
+            {
+                float z = 18f + i * 16f;
+                SpawnBuilding(-22f, z, 20f, 13f, 7.5f + i * 0.6f, false);
+                SpawnBuilding(82f, z, 20f, 13f, 8.5f + i * 0.5f, false);
+            }
+            ParkCarsAlongAvenue();
 
         }
 
@@ -319,7 +365,7 @@ namespace IronDistrict
                         if (randChance(0.13f)) continue;
                         float t = -faceW * 0.5f + (c + 0.5f) * (faceW / cols);
                         Vector3 center = right * t + Vector3.up * y + normal * (half + 0.06f);
-                        if (randChance(0.09f))
+                        if (randChance(0.05f))
                             lit.AddQuad(center, right, Vector3.up, wx, wy, 0f);
                         else
                             glass.AddQuad(center, right, Vector3.up, wx, wy, 0f);
@@ -334,6 +380,36 @@ namespace IronDistrict
             {
                 Vector3 c = shopRight * (i == 0 ? -w * 0.24f : w * 0.24f) + Vector3.up * 1.9f + Vector3.forward * shopBase;
                 glass.AddQuad(c, shopRight, Vector3.up, Mathf.Min(3.4f, w * 0.28f), 2.6f, 0f);
+            }
+
+            // window sills / floor bands give the facades real depth
+            var trim = new MeshBuilder();
+            for (int side = 0; side < 4; side++)
+            {
+                bool zSide = side < 2;
+                float faceW = (zSide ? w : d) - 1.6f;
+                if (faceW < 2f) continue;
+                Vector3 right = side switch
+                {
+                    0 => Vector3.right, 1 => Vector3.left, 2 => Vector3.back, _ => Vector3.forward
+                };
+                Vector3 normal = side switch
+                {
+                    0 => Vector3.forward, 1 => Vector3.back, 2 => Vector3.right, _ => Vector3.left
+                };
+                float half = (zSide ? d : w) * 0.5f;
+                for (int r = 0; r < rows; r++)
+                {
+                    float y = y0 + r * stepY - wy * 0.5f - 0.09f;
+                    Vector3 center = Vector3.up * y + normal * (half + 0.09f);
+                    Vector3 size = zSide ? new Vector3(faceW, 0.1f, 0.24f) : new Vector3(0.24f, 0.1f, faceW);
+                    trim.AddBox(center, size, 0f, 0.5f);
+                }
+            }
+            if (!trim.IsEmpty)
+            {
+                var go = Geo.MeshObj("Sills", parent, trim.Build("sills"), new[] { matFrame });
+                go.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             }
 
             if (!glass.IsEmpty)
@@ -576,50 +652,71 @@ namespace IronDistrict
             Vector3 p = WorldData.PlayerSpawn;
             var camp = Geo.Obj("StartCamp", root, new Vector3(p.x, 0, p.z - 4f)).transform;
 
-            // barriers
-            SpawnBarrier(new Vector3(24, 0.5f, -246), 20f);
-            SpawnBarrier(new Vector3(38, 0.5f, -244), -15f);
-            SpawnBarrier(new Vector3(31, 0.5f, -238), 90f);
+            // ---- аккуратная полевая позиция: баррикады полукругом + палатка + ящики
+            SpawnBarrier(new Vector3(24.5f, 0.5f, -244f), 0f);
+            SpawnBarrier(new Vector3(27.1f, 0.5f, -244.4f), 0f);
+            SpawnBarrier(new Vector3(32.9f, 0.5f, -244.4f), 0f);
+            SpawnBarrier(new Vector3(35.5f, 0.5f, -244f), 0f);
+            SpawnBarrier(new Vector3(21.6f, 0.5f, -238f), 90f);
+            SpawnBarrier(new Vector3(38.4f, 0.5f, -238f), 90f);
 
-            // crates + tent
-            SpawnCrate(new Vector3(36, 0.6f, -230));
-            SpawnCrate(new Vector3(34.4f, 0.6f, -231.2f));
+            // ящики сложены ровно (2 + 1 сверху)
+            SpawnCrate(new Vector3(24.8f, 0.6f, -234.2f));
+            SpawnCrate(new Vector3(26.1f, 0.6f, -234.2f));
+            SpawnCrate(new Vector3(25.45f, 1.75f, -234.2f));
+
             var tent = new MeshBuilder();
             tent.AddBox(new Vector3(0, 1.2f, 0), new Vector3(3.6f, 2.4f, 0.2f), Quaternion.Euler(0, 0, -62f), 0.5f);
             tent.AddBox(new Vector3(1.6f, 1.2f, 0), new Vector3(3.6f, 2.4f, 0.2f), Quaternion.Euler(0, 0, 62f), 0.5f);
-            var tentGo = Geo.MeshObj("Tent", camp, tent.Build("tent"), new[] { AssetLibrary.Solid("tent", new Color(0.35f, 0.38f, 0.26f), 0f, 0.1f) }, new Vector3(-5f, 0, 2f), Quaternion.Euler(0, 40f, 0));
+            var tentGo = Geo.MeshObj("Tent", camp, tent.Build("tent"),
+                new[] { AssetLibrary.Solid("tent", new Color(0.26f, 0.28f, 0.20f), 0f, 0.1f) },
+                new Vector3(-5f, 0, 2f), Quaternion.Euler(0, 40f, 0));
             Geo.AddBoxCollider(tentGo, new Vector3(3.6f, 2.4f, 2.8f), new Vector3(0.8f, 1.2f, 0));
 
-            // lamps near the camp + along arterial roads
-            SpawnLamp(new Vector3(22, 0, -228), 90f);
-            SpawnLamp(new Vector3(39, 0, -236), -90f);
-            for (float z = -190; z <= 300; z += 48f)
+            // фонари: ровный ритм вдоль бульвара (чётко по бордюру)
+            SpawnLamp(new Vector3(20.6f, 0, -232f), 90f);
+            SpawnLamp(new Vector3(39.4f, 0, -220f), -90f);
+            for (float z = -196f; z <= 296f; z += 48f)
             {
-                SpawnLamp(new Vector3(21.2f, 0, z), 90f);
-                SpawnLamp(new Vector3(39.2f, 0, z + 22f), -90f);
+                SpawnLamp(new Vector3(20.6f, 0, z), 90f);
+                SpawnLamp(new Vector3(39.4f, 0, z + 24f), -90f);
             }
 
-            // wrecked cars near camp and on boulevard
-            SpawnCar(new Vector3(24, 0, -215), 8f, 0);
-            SpawnCar(new Vector3(42, 0, -200), -172f, 1);
-            for (int i = 0; i < 22; i++)
-            {
-                float x = rand(14f, 46f);
-                float z = rand(-160f, 300f);
-                if (Mathf.Abs(z - 170f) < 12f) continue;
-                SpawnCar(new Vector3(x, 0, z), 180f + rand(-14f, 14f), rnd.Next(5));
-            }
-            SpawnCar(new Vector3(-60, 0, 170), 92f, 2);
-            SpawnCar(new Vector3(120, 0, 166), 86f, 3);
+            // два затора как укрытие (не «случайные» машины по всей дороге)
+            SpawnCar(new Vector3(26.2f, 0, 96f), 24f, 2);
+            SpawnCar(new Vector3(33.4f, 0, 92f), -38f, 0);
+            SpawnCar(new Vector3(28.6f, 0, 216f), 62f, 1);
+            SpawnCar(new Vector3(34.2f, 0, -148f), 15f, 4);
 
-            // barrier rows closing the avenue near downtown
+            // баррикады, перекрывающие бульвар у даунтауна
             for (int i = 0; i < 6; i++)
-                SpawnBarrier(new Vector3(30f + i * 2.6f, 0.5f, 52f), rand(-8f, 8f));
+                SpawnBarrier(new Vector3(24.6f + i * 2.6f, 0.5f, 52f), 0f);
 
             WorldData.EnemySpawnPoints.Add(new Vector3(30, 0.2f, -150));
             WorldData.EnemySpawnPoints.Add(new Vector3(60, 0.2f, -100));
             WorldData.EnemySpawnPoints.Add(new Vector3(-40, 0.2f, -60));
             WorldData.EnemySpawnPoints.Add(new Vector3(90, 0.2f, -20));
+
+            WorldData.PickupSpots.Add(new Vector3(31.5f, 0.5f, -239f));
+            WorldData.PickupSpots.Add(new Vector3(25.0f, 0.5f, -229f));
+        }
+
+        /// <summary>Cars parked in a neat row against the curbs, not scattered over the lanes.</summary>
+        void ParkCarsAlongAvenue()
+        {
+            int i = 0;
+            for (float z = -60f; z <= 302f; z += 13f)
+            {
+                if (Mathf.Abs(z - 52f) < 9f || Mathf.Abs(z - 170f) < 14f) continue;
+                if (randChance(0.3f)) { i++; continue; }
+                bool left = (i % 2) == 0;
+                float x = left ? 20.2f : 39.8f;
+                float yaw = left ? 180f : 0f;
+                SpawnCar(new Vector3(x, 0, z + rand(-0.6f, 0.6f)), yaw + rand(-2.5f, 2.5f), i % 6);
+                i++;
+            }
+            for (float x = 60f; x <= 130f; x += 14f)
+                SpawnCar(new Vector3(x, 0, 164.6f), 90f + rand(-2f, 2f), (i++) % 6);
         }
 
         // ============================================================= nature
@@ -843,9 +940,9 @@ namespace IronDistrict
         {
             Color[] colors =
             {
-                new Color(0.55f, 0.16f, 0.13f), new Color(0.20f, 0.26f, 0.34f),
-                new Color(0.72f, 0.72f, 0.70f), new Color(0.25f, 0.30f, 0.22f),
-                new Color(0.42f, 0.42f, 0.45f),
+                new Color(0.33f, 0.32f, 0.31f), new Color(0.19f, 0.20f, 0.22f),
+                new Color(0.26f, 0.14f, 0.12f), new Color(0.16f, 0.19f, 0.23f),
+                new Color(0.28f, 0.26f, 0.23f), new Color(0.11f, 0.11f, 0.12f),
             };
             var go = Geo.Obj("Car", root, pos, Quaternion.Euler(0, yaw, 0));
             var mb = new MeshBuilder();
@@ -858,8 +955,9 @@ namespace IronDistrict
                     mb.AddBox(new Vector3(sx * 0.9f, 0.33f, sz), new Vector3(0.24f, 0.62f, 0.62f), 0f, 0.5f);
             mb.Submesh = 2; // glass
             mb.AddBox(new Vector3(0, 1.2f, -0.16f), new Vector3(1.74f, 0.42f, 1.6f), 0f, 0.4f);
+            var paint = AssetLibrary.Solid("car" + colorIdx, colors[colorIdx % colors.Length], 0.55f, 0.55f);
             Geo.MeshObj("Body", go.transform, mb.Build("car"),
-                new[] { AssetLibrary.Painted(colors[colorIdx % colors.Length]), matDark, AssetLibrary.Glass() });
+                new[] { paint, matDark, AssetLibrary.Glass() });
 
             Geo.AddBoxCollider(go, new Vector3(1.95f, 1.5f, 4.4f), new Vector3(0, 0.75f, 0));
             occupied.Add(new Rect(pos.x - 2.4f, pos.z - 2.4f, 4.8f, 4.8f));

@@ -6,7 +6,7 @@ namespace IronDistrict
     /// <summary>Shared palette used across world + UI.</summary>
     public static class Palette
     {
-        public static readonly Color Accent = new Color(1f, 0.56f, 0.18f);
+        public static readonly Color Accent = new Color(0.95f, 0.55f, 0.22f);
         public static readonly Color Danger = new Color(0.88f, 0.22f, 0.16f);
         public static readonly Color Success = new Color(0.49f, 0.81f, 0.35f);
         public static readonly Color Text = new Color(0.94f, 0.92f, 0.88f);

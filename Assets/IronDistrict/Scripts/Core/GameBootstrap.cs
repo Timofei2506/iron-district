@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.UI;
 
 namespace IronDistrict
 {
@@ -13,19 +12,23 @@ namespace IronDistrict
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Boot()
         {
+            // EventSystem MUST exist for uGUI buttons (menu) - create it before any early return.
+            EnsureEventSystem();
+
             if (Object.FindObjectOfType<GameRoot>() != null) return;
 
             var root = new GameObject("IronDistrict");
             root.AddComponent<GameRoot>();
             Object.DontDestroyOnLoad(root);
+        }
 
-            if (Object.FindObjectOfType<EventSystem>() == null)
-            {
-                var es = new GameObject("EventSystem");
-                es.AddComponent<EventSystem>();
-                es.AddComponent<StandaloneInputModule>();
-                Object.DontDestroyOnLoad(es);
-            }
+        public static void EnsureEventSystem()
+        {
+            if (Object.FindObjectOfType<EventSystem>() != null) return;
+            var es = new GameObject("EventSystem");
+            es.AddComponent<EventSystem>();
+            es.AddComponent<StandaloneInputModule>();
+            Object.DontDestroyOnLoad(es);
         }
     }
 

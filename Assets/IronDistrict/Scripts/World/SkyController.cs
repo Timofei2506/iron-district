@@ -29,10 +29,10 @@ namespace IronDistrict
             sunGo.transform.rotation = Quaternion.Euler(38f, 148f, 0f);
             Sun = sunGo.AddComponent<Light>();
             Sun.type = LightType.Directional;
-            Sun.color = new Color(1f, 0.92f, 0.80f);
-            Sun.intensity = 1.45f;
+            Sun.color = new Color(1f, 0.945f, 0.87f);
+            Sun.intensity = 1.62f;
             Sun.shadows = LightShadows.Soft;
-            Sun.shadowStrength = 0.82f;
+            Sun.shadowStrength = 0.9f;
             Sun.shadowBias = 0.04f;
             Sun.shadowNormalBias = 0.35f;
 
@@ -41,22 +41,24 @@ namespace IronDistrict
             fillGo.transform.rotation = Quaternion.Euler(18f, -40f, 0f);
             fill = fillGo.AddComponent<Light>();
             fill.type = LightType.Directional;
-            fill.color = new Color(0.55f, 0.66f, 0.85f);
-            fill.intensity = 0.28f;
+            fill.color = new Color(0.52f, 0.62f, 0.78f);
+            fill.intensity = 0.22f;
             fill.shadows = LightShadows.None;
 
             RenderSettings.sun = Sun;
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.Linear;
-            RenderSettings.fogColor = new Color(0.73f, 0.71f, 0.67f);
-            RenderSettings.fogStartDistance = 150f;
-            RenderSettings.fogEndDistance = 820f;
+            RenderSettings.fogColor = new Color(0.66f, 0.67f, 0.68f);
+            RenderSettings.fogStartDistance = 110f;
+            RenderSettings.fogEndDistance = 760f;
 
             RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = new Color(0.50f, 0.56f, 0.63f);
-            RenderSettings.ambientEquatorColor = new Color(0.42f, 0.40f, 0.36f);
-            RenderSettings.ambientGroundColor = new Color(0.20f, 0.19f, 0.17f);
-            RenderSettings.ambientIntensity = 1.15f;
+            RenderSettings.ambientSkyColor = new Color(0.44f, 0.49f, 0.57f);
+            RenderSettings.ambientEquatorColor = new Color(0.33f, 0.32f, 0.30f);
+            RenderSettings.ambientGroundColor = new Color(0.15f, 0.14f, 0.13f);
+            RenderSettings.ambientIntensity = 1.0f;
+            RenderSettings.reflectionIntensity = 0.8f;
+            RenderSettings.defaultReflectionMode = DefaultReflectionMode.Skybox;
 
             var skyShader = Shader.Find("Skybox/Procedural");
             if (skyShader == null)
@@ -86,13 +88,13 @@ namespace IronDistrict
         /// <summary>Restores the golden-hour gameplay look (after menu mood).</summary>
         public void PlayMood()
         {
-            Sun.color = new Color(1f, 0.92f, 0.80f);
-            Sun.intensity = 1.45f;
+            Sun.color = new Color(1f, 0.945f, 0.87f);
+            Sun.intensity = 1.62f;
             Sun.transform.rotation = Quaternion.Euler(38f, 148f, 0f);
             fill.intensity = 0.28f;
-            RenderSettings.fogColor = new Color(0.73f, 0.71f, 0.67f);
-            RenderSettings.fogStartDistance = 150f;
-            RenderSettings.fogEndDistance = 820f;
+            RenderSettings.fogColor = new Color(0.66f, 0.67f, 0.68f);
+            RenderSettings.fogStartDistance = 110f;
+            RenderSettings.fogEndDistance = 760f;
             RenderSettings.ambientIntensity = 1.15f;
             if (sky != null)
             {

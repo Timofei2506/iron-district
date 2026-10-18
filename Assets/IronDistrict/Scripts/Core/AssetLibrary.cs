@@ -154,16 +154,18 @@ namespace IronDistrict
         public static Material Sand(float t = 1f) => Tiled("M_Sand", t);
         public static Material Hazard(float t = 1f) => Tiled("M_Hazard", t);
 
-        public static Material Glass() => Solid("glass", new Color(0.10f, 0.13f, 0.16f), 0.55f, 0.93f);
-        public static Material GlassLit() => Solid("glasslit", new Color(0.95f, 0.72f, 0.38f), 0f, 0.7f,
-            new Color(1.4f, 0.82f, 0.35f));
-        public static Material WindowFrame() => Solid("frame", new Color(0.14f, 0.14f, 0.15f), 0.6f, 0.35f);
-        public static Material Bark() => Solid("bark", new Color(0.22f, 0.16f, 0.11f), 0f, 0.12f);
+        public static Material Glass() => Solid("glass", new Color(0.055f, 0.065f, 0.075f), 0.65f, 0.95f);
+        public static Material GlassLit() => Solid("glasslit", new Color(0.62f, 0.50f, 0.34f), 0f, 0.55f,
+            new Color(0.55f, 0.36f, 0.17f));
+        public static Material WindowFrame() => Solid("frame", new Color(0.10f, 0.10f, 0.105f), 0.5f, 0.3f);
+        public static Material Bark() => Solid("bark", new Color(0.155f, 0.125f, 0.10f), 0f, 0.1f);
         public static Material Leaf(int variant) => Solid("leaf" + variant,
-            new Color(0.16f + 0.05f * variant, 0.30f + 0.07f * variant, 0.12f + 0.03f * variant), 0f, 0.08f);
+            new Color(0.135f + 0.022f * variant, 0.175f + 0.03f * variant, 0.10f + 0.015f * variant), 0f, 0.06f);
         public static Material PineLeaf(int variant) => Solid("pine" + variant,
-            new Color(0.10f + 0.03f * variant, 0.24f + 0.05f * variant, 0.12f + 0.02f * variant), 0f, 0.07f);
-        public static Material Rock() => Solid("rock", new Color(0.40f, 0.39f, 0.37f), 0f, 0.15f);
+            new Color(0.085f + 0.015f * variant, 0.135f + 0.025f * variant, 0.095f + 0.012f * variant), 0f, 0.05f);
+        public static Material Rock() => Solid("rock", new Color(0.33f, 0.325f, 0.31f), 0f, 0.12f);
+        public static Material Curb() => Solid("curb", new Color(0.46f, 0.455f, 0.44f), 0f, 0.28f);
+        public static Material RoadLine() => Solid("roadline", new Color(0.68f, 0.67f, 0.63f), 0f, 0.22f);
         public static Material Painted(Color c) => Solid("paint" + c, c, 0.25f, 0.45f);
         public static Material DarkMetal() => Solid("darkmetal", new Color(0.13f, 0.13f, 0.14f), 0.75f, 0.55f);
         public static Material AccentMetal() => Solid("accentmetal", new Color(0.85f, 0.36f, 0.10f), 0.35f, 0.5f);

@@ -47,6 +47,7 @@ namespace IronDistrict.EditorTools
         public static readonly string[] Wanted =
         {
             "Standard",
+            "IronDistrict/PostFX",
             "Skybox/Procedural",
             "Legacy Shaders/Particles/Additive",
             "Legacy Shaders/Particles/Alpha Blended",

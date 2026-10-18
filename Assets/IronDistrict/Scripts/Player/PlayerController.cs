@@ -57,6 +57,10 @@ namespace IronDistrict
             cam.fieldOfView = 68f;
             camGo.AddComponent<AudioListener>();
 
+            cam.allowHDR = true;
+            cam.allowMSAA = true;
+            camGo.AddComponent<PostFx>();
+
             var camCtl = pivot.AddComponent<CameraController>();
             camCtl.Body = go.transform;
             camCtl.Cam = cam;

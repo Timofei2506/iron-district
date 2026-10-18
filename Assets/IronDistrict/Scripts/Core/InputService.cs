@@ -2,7 +2,10 @@ using UnityEngine;
 
 namespace IronDistrict
 {
-    /// <summary>Central input wrapper (legacy Input Manager) with safe fallbacks.</summary>
+    /// <summary>
+    /// Central input wrapper (legacy Input Manager) with hard fallbacks so movement
+    /// works even if the project's Input axes are missing or broken.
+    /// </summary>
     public class InputService : MonoBehaviour
     {
         public static InputService I;
@@ -22,8 +25,12 @@ namespace IronDistrict
         static bool loggedAxisWarning;
         Vector2 lastMouse;
         bool hasLastMouse;
+        float graceUntil;
 
         void Awake() { I = this; }
+
+        /// <summary>Ignores fire/jump for a moment (used right after the menu click).</summary>
+        public void ArmGrace(float seconds) => graceUntil = Time.time + seconds;
 
         static float Axis(string name, bool raw = false)
         {
@@ -69,23 +76,26 @@ namespace IronDistrict
                 return;
             }
 
-            Move = new Vector2(Axis("Horizontal", true), Axis("Vertical", true));
-            if (!axesAvailable) Move = KeyboardMove();
+            // keyboard is authoritative when the axes are dead/broken
+            Vector2 fromAxes = new Vector2(Axis("Horizontal", true), Axis("Vertical", true));
+            Vector2 fromKeys = KeyboardMove();
+            Move = fromAxes.sqrMagnitude > 0.0001f ? fromAxes : fromKeys;
             if (Move.sqrMagnitude > 1f) Move.Normalize();
 
             if (Cursor.lockState == CursorLockMode.Locked)
             {
                 float sens = 1.9f * Sensitivity;
-                if (axesAvailable)
+                Vector2 fromMouseAxes = new Vector2(Axis("Mouse X") * sens, Axis("Mouse Y") * sens);
+                if (fromMouseAxes.sqrMagnitude > 0.000001f)
                 {
-                    Look = new Vector2(Axis("Mouse X") * sens, Axis("Mouse Y") * sens);
+                    Look = fromMouseAxes;
+                    hasLastMouse = false;
                 }
                 else
                 {
-                    // last-resort fallback: raw mouse delta (works if cursor isn't locked by the OS)
+                    // last-resort: direct mouse delta
                     Vector2 mp = Input.mousePosition;
-                    if (hasLastMouse) Look = (mp - lastMouse) * 0.12f * Sensitivity;
-                    else Look = Vector2.zero;
+                    Look = hasLastMouse ? (mp - lastMouse) * 0.12f * Sensitivity : Vector2.zero;
                     lastMouse = mp;
                     hasLastMouse = true;
                 }
@@ -96,10 +106,11 @@ namespace IronDistrict
                 hasLastMouse = false;
             }
 
+            bool grace = Time.time < graceUntil;
             Sprint = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
-            Jump = Input.GetKeyDown(KeyCode.Space);
-            Fire = Input.GetMouseButton(0);
-            Ads = Input.GetMouseButton(1);
+            Jump = !grace && Input.GetKeyDown(KeyCode.Space);
+            Fire = !grace && Input.GetMouseButton(0);
+            Ads = !grace && Input.GetMouseButton(1);
             ReloadPressed = Input.GetKeyDown(KeyCode.R);
         }
     }
