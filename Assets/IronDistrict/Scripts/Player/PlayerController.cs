@@ -177,17 +177,6 @@ namespace IronDistrict
 
         public void AddShake(float amount) => shake = Mathf.Min(1.2f, shake + amount);
 
-        public void Teleport(Vector3 pos)
-        {
-            var c = GetComponent<CharacterController>();
-            bool was = c.enabled;
-            c.enabled = false;
-            transform.position = pos;
-            c.enabled = was;
-            vel = Vector3.zero;
-            vy = 0f;
-        }
-
         void Update()
         {
             var root = GameRoot.I;

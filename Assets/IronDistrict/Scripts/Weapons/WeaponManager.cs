@@ -39,6 +39,7 @@ namespace IronDistrict
         Vector3 magHome;
         AudioSource audioSource;
         float nextShotTime;
+        float reloadStart;
         float bloom;
         float kickBack;
         float swayX, swayY;
@@ -238,6 +239,7 @@ namespace IronDistrict
         System.Collections.IEnumerator ReloadRoutine()
         {
             Reloading = true;
+            reloadStart = Time.time;
             Sfx.Play("sfx_reload", 0.7f, 1f);
             yield return new WaitForSeconds(ReloadTime * 0.62f);
 

@@ -18,6 +18,7 @@ namespace IronDistrict
 
         Transform root;
         NavMeshData navData;
+        NavMeshDataInstance navInstance;
         Random rnd;
 
         readonly List<Rect> occupied = new List<Rect>(); // x/z rects used to avoid trees/bin placement
@@ -36,11 +37,7 @@ namespace IronDistrict
 
         void OnDestroy()
         {
-            if (navData != null)
-            {
-                try { NavMesh.RemoveNavMeshData(navData); } catch { }
-                navData = null;
-            }
+            RemoveNav();
             if (Instance == this) Instance = null;
         }
 
@@ -48,13 +45,19 @@ namespace IronDistrict
         /// <summary>Removes navmesh data + world root (used when regenerating a new seed).</summary>
         public void UnloadWorld()
         {
-            if (navData != null)
-            {
-                try { NavMesh.RemoveNavMeshData(navData); } catch { }
-                navData = null;
-            }
+            RemoveNav();
             var old = GameObject.Find("World");
             if (old != null) DestroyImmediate(old);
+        }
+
+        void RemoveNav()
+        {
+            if (navInstance.valid)
+            {
+                try { NavMesh.RemoveNavMeshData(navInstance); } catch { }
+            }
+            navInstance = default;
+            navData = null;
         }
 
         public IEnumerator Generate(int seed, Action<string> status)
@@ -196,7 +199,7 @@ namespace IronDistrict
                 {
                     float dist = Mathf.Abs(bx - 30f) + Mathf.Abs(bz - 170f);
                     bool landmark = dist < 55f;
-                    int count = randChance(0.55) ? 1 : 2;
+                    int count = randChance(0.55f) ? 1 : 2;
 
                     if (count == 1)
                     {
@@ -1031,7 +1034,7 @@ namespace IronDistrict
                 Debug.LogError("NavMesh build returned null");
                 return;
             }
-            NavMesh.AddNavMeshData(navData);
+            navInstance = NavMesh.AddNavMeshData(navData);
 
             if (!NavMesh.SamplePosition(WorldData.PlayerSpawn, out _, 14f, NavMesh.AllAreas))
                 Debug.LogWarning("Player spawn is not on navmesh (still fine for CharacterController).");
