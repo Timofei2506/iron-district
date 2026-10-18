@@ -67,7 +67,7 @@ namespace IronDistrict
             SetRect(bestText.rectTransform, new Vector2(0, 0), new Vector2(0, 0), new Vector2(103, 132), new Vector2(700, 30));
 
             hintText = Txt("Controls", canvasGo.transform,
-                "WASD — движение · SHIFT — бег · ПРОБЕЛ — прыжок\nЛКМ — огонь · ПКМ — прицел · R — перезарядка · ESC — пауза",
+                "WASD — движение · SHIFT — бег · ПРОБЕЛ — прыжок · СТРЕЛКИ — обзор\nЛКМ — огонь · ПКМ — прицел · R — перезарядка · ESC — пауза",
                 16, TextAnchor.MiddleLeft, new Color(1f, 1f, 1f, 0.45f));
             SetRect(hintText.rectTransform, new Vector2(0, 0), new Vector2(0, 0), new Vector2(103, 84), new Vector2(900, 44));
 

@@ -10,13 +10,25 @@ namespace IronDistrict
         static readonly Dictionary<string, Material> variantCache = new Dictionary<string, Material>();
         static readonly Dictionary<string, Texture2D> texCache = new Dictionary<string, Texture2D>();
         static Shader standard;
+        static Shader worldShader;
 
+        /// <summary>Built-in Standard (keeps emission/transparency working).</summary>
         public static Shader Standard
         {
             get
             {
                 if (standard == null) standard = Shader.Find("Standard");
                 return standard;
+            }
+        }
+
+        /// <summary>Standard look + baked vertex AO for world geometry.</summary>
+        public static Shader WorldShader
+        {
+            get
+            {
+                if (worldShader == null) worldShader = Shader.Find("IronDistrict/Surface");
+                return worldShader != null ? worldShader : Standard;
             }
         }
 
@@ -59,8 +71,9 @@ namespace IronDistrict
                 {
                     tex = def.tex; metal = def.metal; gloss = def.gloss; bump = def.bump;
                 }
-                m = new Material(Standard);
+                m = new Material(WorldShader);
                 MatUtil.SetupStandard(ref m, Color.white, metal, gloss);
+                if (m.HasProperty("_AOStrength")) m.SetFloat("_AOStrength", 1f);
                 var albedo = Tex(tex);
                 if (albedo != null)
                 {

@@ -60,53 +60,55 @@ namespace IronDistrict
             navData = null;
         }
 
-        public IEnumerator Generate(int seed, Action<string> status)
+        public bool GenerationFailed { get; private set; }
+        public string GenerationError { get; private set; }
+
+        public IEnumerator Generate(int seed, Action<string> status, Action<Exception> onError = null)
         {
             rnd = new Random(seed);
             WorldData.Clear();
             occupied.Clear();
             buildingCounter = propCounter = 0;
+            GenerationFailed = false;
+            GenerationError = null;
 
             var go = new GameObject("World");
             root = go.transform;
 
-            status?.Invoke("МАТЕРИАЛЫ");
-            PrepareMaterials();
-            yield return null;
+            var steps = new (string name, Action action)[]
+            {
+                ("МАТЕРИАЛЫ", PrepareMaterials),
+                ("ЛАНДШАФТ", BuildGround),
+                ("ДОРОГИ", BuildRoads),
+                ("ГОРОД", BuildCity),
+                ("ПРОМЗОНА", BuildIndustrial),
+                ("ДЕРЕВНЯ", BuildVillage),
+                ("ЛЕС И ГОРЫ", BuildNature),
+                ("БАЗА ИГРОКА", BuildCamp),
+                ("ПРЕДМЕТЫ", BuildPickups),
+                ("ГРАНИЦЫ", BuildBoundary),
+                ("НАВИГАЦИЯ", BakeNavMesh),
+            };
 
-            status?.Invoke("ЛАНДШАФТ");
-            BuildGround();
-            yield return null;
+            foreach (var (name, action) in steps)
+            {
+                status?.Invoke(name);
+                yield return null; // paint the status before the heavy work
 
-            status?.Invoke("ДОРОГИ");
-            BuildRoads();
-            yield return null;
+                Exception error = null;
+                try { action(); }
+                catch (Exception e) { error = e; }
 
-            status?.Invoke("ГОРОД");
-            BuildCity();
-            yield return null;
-
-            status?.Invoke("ПРОМЗОНА");
-            BuildIndustrial();
-            yield return null;
-
-            status?.Invoke("ДЕРЕВНЯ");
-            BuildVillage();
-            yield return null;
-
-            status?.Invoke("ЛЕС И ГОРЫ");
-            BuildNature();
-            yield return null;
-
-            status?.Invoke("ПРОПС И БАЗА ИГРОКА");
-            BuildCamp();
-            BuildPickups();
-            BuildBoundary();
-            yield return null;
-
-            status?.Invoke("НАВИГАЦИЯ");
-            BakeNavMesh();
-            yield return null;
+                if (error != null)
+                {
+                    GenerationFailed = true;
+                    GenerationError = name + ": " + error.GetType().Name + " — " + error.Message;
+                    Debug.LogError("[IronDistrict] Генерация упала на шаге " + name + "\n" + error);
+                    onError?.Invoke(error);
+                    yield break;
+                }
+                yield return null;
+            }
 
             status?.Invoke("ГОТОВО");
         }
@@ -219,73 +221,80 @@ namespace IronDistrict
         {
             float[] blockX = { -75f, -5f, 65f };
             float[] blockZ = { 82.5f, 137.5f, 202.5f, 262.5f };
+            const float halfW = 29f, halfD = 32f;
 
-            // raised concrete pads with curbs (reads as real city blocks)
             var curbMat = AssetLibrary.Curb();
             foreach (var bx in blockX)
             {
                 foreach (var bz in blockZ)
                 {
-                    Geo.GroundRect("Pad", root, bx, bz, 58f, 64f, 0.021f, matConcreteDark, 0.06f);
-                    Geo.Box("CurbN", root, new Vector3(bx, 0.11f, bz + 32f), new Vector3(58f, 0.22f, 0.55f), curbMat);
-                    Geo.Box("CurbS", root, new Vector3(bx, 0.11f, bz - 32f), new Vector3(58f, 0.22f, 0.55f), curbMat);
-                    Geo.Box("CurbE", root, new Vector3(bx + 29f, 0.11f, bz), new Vector3(0.55f, 0.22f, 64f), curbMat);
-                    Geo.Box("CurbW", root, new Vector3(bx - 29f, 0.11f, bz), new Vector3(0.55f, 0.22f, 64f), curbMat);
-                }
-            }
+                    // приподнятая плита квартала + бордюр
+                    Geo.GroundRect("Pad", root, bx, bz, halfW * 2f, halfD * 2f, 0.021f, matConcreteDark, 0.06f);
+                    Geo.Box("CurbN", root, new Vector3(bx, 0.11f, bz + halfD), new Vector3(halfW * 2f, 0.22f, 0.55f), curbMat);
+                    Geo.Box("CurbS", root, new Vector3(bx, 0.11f, bz - halfD), new Vector3(halfW * 2f, 0.22f, 0.55f), curbMat);
+                    Geo.Box("CurbE", root, new Vector3(bx + halfW, 0.11f, bz), new Vector3(0.55f, 0.22f, halfD * 2f), curbMat);
+                    Geo.Box("CurbW", root, new Vector3(bx - halfW, 0.11f, bz), new Vector3(0.55f, 0.22f, halfD * 2f), curbMat);
 
-            int idx = 0;
-            foreach (var bx in blockX)
-            {
-                foreach (var bz in blockZ)
-                {
                     float dist = Mathf.Abs(bx - 30f) + Mathf.Abs(bz - 170f);
-                    bool landmark = dist < 55f;
-                    int count = randChance(0.55f) ? 1 : 2;
+                    bool landmark = dist < 60f;
+                    BuildBlockPerimeter(bx, bz, halfW, halfD, landmark);
 
-                    if (count == 1)
-                    {
-                        // одна башня по центру квартала, лёгкий сдвиг по X
-                        float w = lerp(28f, 38f);
-                        float d = lerp(26f, 36f);
-                        float h = landmark ? lerp(54f, 98f) : lerp(18f, 46f);
-                        SpawnBuilding(bx + rand(-1.5f, 1.5f), bz + rand(-1.5f, 1.5f), w, d, h, landmark);
-                    }
-                    else
-                    {
-                        // два корпуса строго вдоль улицы, с одинаковым отступом от тротуара
-                        for (int k = 0; k < 2; k++)
-                        {
-                            float off = k == 0 ? -13.5f : 13.5f;
-                            float w = lerp(20f, 22f);
-                            float d = lerp(24f, 30f);
-                            float h = landmark ? lerp(34f, 68f) : lerp(14f, 40f);
-                            SpawnBuilding(bx + off, bz + rand(-1f, 1f), w, d, h, landmark && k == 0);
-                        }
-                    }
-                    idx++;
-
-                    // street spawn points around the block
-                    if (randChance(0.85f))
-                        WorldData.EnemySpawnPoints.Add(new Vector3(bx + rand(-24f, 24f), 0.2f, bz + rand(20f, 36f)));
-                    if (randChance(0.5f))
-                        WorldData.EnemySpawnPoints.Add(new Vector3(bx + rand(-28f, 28f), 0.2f, bz - rand(16f, 30f)));
+                    // точки спавна врагов по периметру квартала
+                    WorldData.EnemySpawnPoints.Add(new Vector3(bx + rand(-26f, 26f), 0.2f, bz + halfD + rand(6f, 12f)));
+                    WorldData.EnemySpawnPoints.Add(new Vector3(bx + rand(-26f, 26f), 0.2f, bz - halfD - rand(6f, 12f)));
                 }
             }
 
-            // avenue spawn points
+            // бульвар: спавн вдоль проезжей части
             for (float z = 95f; z <= 285f; z += 47f)
                 WorldData.EnemySpawnPoints.Add(new Vector3(30f + rand(-14f, 14f), 0.2f, z));
 
-            // аккуратный ряд низких домов вдоль бульвара к югу от даунтауна
+            // малоэтажный фронт вдоль бульвара к югу от даунтауна
             for (int i = 0; i < 3; i++)
             {
                 float z = 18f + i * 16f;
-                SpawnBuilding(-22f, z, 20f, 13f, 7.5f + i * 0.6f, false);
-                SpawnBuilding(82f, z, 20f, 13f, 8.5f + i * 0.5f, false);
+                SpawnBuilding(-24f, z, 22f, 13f, 7.5f + i * 0.6f, false);
+                SpawnBuilding(84f, z, 22f, 13f, 8.5f + i * 0.5f, false);
             }
             ParkCarsAlongAvenue();
+        }
 
+        /// <summary>
+        /// Ring of buildings around a courtyard: continuous street frontage on all
+        /// four sides, like a real downtown block - not detached boxes in a field.
+        /// </summary>
+        void BuildBlockPerimeter(float bx, float bz, float halfW, float halfD, bool landmark)
+        {
+            const float edge = 1.2f;     // отступ от бордюра
+            const float frontD = 16f;    // глубина корпуса, выходящего на улицу
+            const float sideW = 14f;     // ширина корпуса по боковой улице
+
+            float innerZ = halfD - frontD * 0.5f - edge;
+            float innerX = halfW - sideW * 0.5f - edge;
+
+            float Height(bool central) => landmark
+                ? (central ? lerp(56f, 104f) : lerp(26f, 58f))
+                : (central ? lerp(20f, 48f) : lerp(14f, 34f));
+
+            // юг и север — длинные корпуса фронтом на бульвар/переулок
+            SpawnBuilding(bx + rand(-1f, 1f), bz - innerZ, halfW * 2f - 2.4f, frontD, Height(true), landmark);
+            SpawnBuilding(bx + rand(-1f, 1f), bz + innerZ, halfW * 2f - 2.4f, frontD, Height(false), landmark);
+
+            // запад и восток — закрывают периметр, внутренний двор остаётся
+            float sideD = halfD * 2f - frontD * 2f - 2.4f;
+            if (sideD > 8f)
+            {
+                SpawnBuilding(bx - innerX, bz + rand(-1f, 1f), sideW, sideD, Height(false), landmark);
+                SpawnBuilding(bx + innerX, bz + rand(-1f, 1f), sideW, sideD, Height(false), landmark);
+            }
+
+            // двор: пара контейнеров/ящиков, чтобы не было пустоты
+            if (randChance(0.7f))
+            {
+                SpawnCrate(new Vector3(bx + rand(-8f, 8f), 0.6f, bz + rand(-8f, 8f)));
+                if (randChance(0.5f))
+                    SpawnCrate(new Vector3(bx + rand(-8f, 8f), 0.6f, bz + rand(-8f, 8f)));
+            }
         }
 
         void SpawnBuilding(float cx, float cz, float w, float d, float h, bool landmark)
@@ -298,7 +307,7 @@ namespace IronDistrict
             Material facade = facadeMats[rnd.Next(facadeMats.Length)];
 
             // ------- body (walls + base + parapet)
-            var body = new MeshBuilder();
+            var body = new MeshBuilder { BakeAO = true, GroundFade = 3.2f };
             body.AddBox(new Vector3(0, h * 0.5f, 0), new Vector3(w, h, d), 0f, 0.35f);
             body.AddBox(new Vector3(0, 0.55f, 0), new Vector3(w + 0.3f, 1.1f, d + 0.3f), 0f, 0.35f);
             // parapet
@@ -427,7 +436,7 @@ namespace IronDistrict
 
         void RoofDetail(Transform parent, float w, float d, float h, bool landmark)
         {
-            var mb = new MeshBuilder();
+            var mb = new MeshBuilder { BakeAO = true, GroundFade = 1.2f };
             mb.Submesh = 0; // metal
             int ac = 1 + rnd.Next(2);
             for (int i = 0; i < ac; i++)
@@ -519,7 +528,7 @@ namespace IronDistrict
         void SpawnWarehouse(float cx, float cz, float w, float d, float h, float yawDeg)
         {
             var wr = Geo.Obj("Warehouse_" + propCounter++, root, new Vector3(cx, 0, cz), Quaternion.Euler(0, yawDeg, 0));
-            var body = new MeshBuilder();
+            var body = new MeshBuilder { BakeAO = true, GroundFade = 2.4f };
             body.AddBox(new Vector3(0, h * 0.5f, 0), new Vector3(w, h, d), 0f, 0.3f);
             body.AddBox(new Vector3(0, h + 0.25f, 0), new Vector3(w + 1.6f, 0.5f, d + 1.6f), 0f, 0.3f);
             Geo.MeshObj("Body", wr.transform, body.Build("warehouse"), new[] { AssetLibrary.Tiled("M_Metal", 1f, new Color(0.82f, 0.86f, 0.9f)) });
@@ -549,7 +558,7 @@ namespace IronDistrict
         void SpawnContainer(Vector3 pos, float yaw, Color tint)
         {
             var go = Geo.Obj("Container", root, pos, Quaternion.Euler(0, yaw, 0));
-            var mb = new MeshBuilder();
+            var mb = new MeshBuilder { BakeAO = true, GroundFade = 1.4f };
             mb.AddBox(new Vector3(0, 1.35f, 0), new Vector3(2.5f, 2.7f, 6.2f), 0f, 0.5f);
             // ribs
             for (int i = -2; i <= 2; i++)
@@ -606,11 +615,11 @@ namespace IronDistrict
             bool wooden = randChance(0.6f);
             Material wallMat = wooden ? AssetLibrary.Tiled("M_Wood", 1f, new Color(0.9f, 0.85f, 0.8f)) : matBrick;
 
-            var body = new MeshBuilder();
+            var body = new MeshBuilder { BakeAO = true, GroundFade = 1.6f };
             body.AddBox(new Vector3(0, 1.7f, 0), new Vector3(7f, 3.4f, 5.4f), 0f, 0.45f);
             Geo.MeshObj("Body", h.transform, body.Build("house"), new[] { wallMat });
 
-            var roof = new MeshBuilder();
+            var roof = new MeshBuilder { BakeAO = true, GroundFade = 1.0f };
             roof.AddBox(new Vector3(0, 4.35f, 1.62f), new Vector3(7.9f, 0.24f, 3.55f), Quaternion.Euler(31f, 0, 0), 0.4f);
             roof.AddBox(new Vector3(0, 4.35f, -1.62f), new Vector3(7.9f, 0.24f, 3.55f), Quaternion.Euler(-31f, 0, 0), 0.4f);
             Geo.MeshObj("Roof", h.transform, roof.Build("roof"), new[] { AssetLibrary.Tiled("M_Rust", 1f, new Color(0.75f, 0.72f, 0.7f)) });
@@ -650,20 +659,21 @@ namespace IronDistrict
         void BuildCamp()
         {
             Vector3 p = WorldData.PlayerSpawn;
-            var camp = Geo.Obj("StartCamp", root, new Vector3(p.x, 0, p.z - 4f)).transform;
+            float cz0 = p.z;
+            var camp = Geo.Obj("StartCamp", root, new Vector3(p.x, 0, cz0 - 4f)).transform;
 
             // ---- аккуратная полевая позиция: баррикады полукругом + палатка + ящики
-            SpawnBarrier(new Vector3(24.5f, 0.5f, -244f), 0f);
-            SpawnBarrier(new Vector3(27.1f, 0.5f, -244.4f), 0f);
-            SpawnBarrier(new Vector3(32.9f, 0.5f, -244.4f), 0f);
-            SpawnBarrier(new Vector3(35.5f, 0.5f, -244f), 0f);
-            SpawnBarrier(new Vector3(21.6f, 0.5f, -238f), 90f);
-            SpawnBarrier(new Vector3(38.4f, 0.5f, -238f), 90f);
+            SpawnBarrier(new Vector3(p.x - 5.5f, 0.5f, cz0 - 12f), 0f);
+            SpawnBarrier(new Vector3(p.x - 2.9f, 0.5f, cz0 - 12.4f), 0f);
+            SpawnBarrier(new Vector3(p.x + 2.9f, 0.5f, cz0 - 12.4f), 0f);
+            SpawnBarrier(new Vector3(p.x + 5.5f, 0.5f, cz0 - 12f), 0f);
+            SpawnBarrier(new Vector3(p.x - 8.4f, 0.5f, cz0 - 6f), 90f);
+            SpawnBarrier(new Vector3(p.x + 8.4f, 0.5f, cz0 - 6f), 90f);
 
             // ящики сложены ровно (2 + 1 сверху)
-            SpawnCrate(new Vector3(24.8f, 0.6f, -234.2f));
-            SpawnCrate(new Vector3(26.1f, 0.6f, -234.2f));
-            SpawnCrate(new Vector3(25.45f, 1.75f, -234.2f));
+            SpawnCrate(new Vector3(p.x - 5.2f, 0.6f, cz0 - 2.2f));
+            SpawnCrate(new Vector3(p.x - 3.9f, 0.6f, cz0 - 2.2f));
+            SpawnCrate(new Vector3(p.x - 4.55f, 1.75f, cz0 - 2.2f));
 
             var tent = new MeshBuilder();
             tent.AddBox(new Vector3(0, 1.2f, 0), new Vector3(3.6f, 2.4f, 0.2f), Quaternion.Euler(0, 0, -62f), 0.5f);
@@ -674,9 +684,9 @@ namespace IronDistrict
             Geo.AddBoxCollider(tentGo, new Vector3(3.6f, 2.4f, 2.8f), new Vector3(0.8f, 1.2f, 0));
 
             // фонари: ровный ритм вдоль бульвара (чётко по бордюру)
-            SpawnLamp(new Vector3(20.6f, 0, -232f), 90f);
-            SpawnLamp(new Vector3(39.4f, 0, -220f), -90f);
-            for (float z = -196f; z <= 296f; z += 48f)
+            SpawnLamp(new Vector3(20.6f, 0, cz0), 90f);
+            SpawnLamp(new Vector3(39.4f, 0, cz0 + 12f), -90f);
+            for (float z = cz0 + 36f; z <= 296f; z += 48f)
             {
                 SpawnLamp(new Vector3(20.6f, 0, z), 90f);
                 SpawnLamp(new Vector3(39.4f, 0, z + 24f), -90f);
@@ -697,8 +707,8 @@ namespace IronDistrict
             WorldData.EnemySpawnPoints.Add(new Vector3(-40, 0.2f, -60));
             WorldData.EnemySpawnPoints.Add(new Vector3(90, 0.2f, -20));
 
-            WorldData.PickupSpots.Add(new Vector3(31.5f, 0.5f, -239f));
-            WorldData.PickupSpots.Add(new Vector3(25.0f, 0.5f, -229f));
+            WorldData.PickupSpots.Add(new Vector3(p.x + 1.5f, 0.5f, cz0 - 7f));
+            WorldData.PickupSpots.Add(new Vector3(p.x - 4.9f, 0.5f, cz0 + 3f));
         }
 
         /// <summary>Cars parked in a neat row against the curbs, not scattered over the lanes.</summary>

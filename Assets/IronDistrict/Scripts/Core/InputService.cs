@@ -54,10 +54,10 @@ namespace IronDistrict
         static Vector2 KeyboardMove()
         {
             float x = 0f, y = 0f;
-            if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) x -= 1f;
-            if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) x += 1f;
-            if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) y -= 1f;
-            if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) y += 1f;
+            if (Input.GetKey(KeyCode.A)) x -= 1f;
+            if (Input.GetKey(KeyCode.D)) x += 1f;
+            if (Input.GetKey(KeyCode.S)) y -= 1f;
+            if (Input.GetKey(KeyCode.W)) y += 1f;
             return new Vector2(x, y);
         }
 
@@ -76,10 +76,10 @@ namespace IronDistrict
                 return;
             }
 
-            // keyboard is authoritative when the axes are dead/broken
+            // WASD через KeyCode — это работает всегда, независимо от настроек Input Manager
             Vector2 fromAxes = new Vector2(Axis("Horizontal", true), Axis("Vertical", true));
             Vector2 fromKeys = KeyboardMove();
-            Move = fromAxes.sqrMagnitude > 0.0001f ? fromAxes : fromKeys;
+            Move = fromKeys.sqrMagnitude > 0.0001f ? fromKeys : fromAxes; // клавиши важнее осей
             if (Move.sqrMagnitude > 1f) Move.Normalize();
 
             if (Cursor.lockState == CursorLockMode.Locked)
@@ -104,6 +104,18 @@ namespace IronDistrict
             {
                 Look = Vector2.zero;
                 hasLastMouse = false;
+            }
+
+            // резервный обзор: стрелки поворачивают камеру, если мышь недоступна
+            float arrowYaw = 0f, arrowPitch = 0f;
+            if (Input.GetKey(KeyCode.LeftArrow)) arrowYaw -= 1f;
+            if (Input.GetKey(KeyCode.RightArrow)) arrowYaw += 1f;
+            if (Input.GetKey(KeyCode.UpArrow)) arrowPitch += 1f;
+            if (Input.GetKey(KeyCode.DownArrow)) arrowPitch -= 1f;
+            if (arrowYaw != 0f || arrowPitch != 0f)
+            {
+                float turnSpeed = 150f * Time.unscaledDeltaTime * Sensitivity;
+                Look += new Vector2(arrowYaw * turnSpeed, arrowPitch * turnSpeed * 0.7f);
             }
 
             bool grace = Time.time < graceUntil;

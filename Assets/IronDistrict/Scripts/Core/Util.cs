@@ -26,6 +26,11 @@ namespace IronDistrict
 
         public int Submesh = 0;
 
+        /// <summary>Bake a fake ambient occlusion into vertex colours (ground grime + dark undersides).</summary>
+        public bool BakeAO = false;
+        /// <summary>Height (metres) over which the ground-grime gradient fades out. 0 = no gradient.</summary>
+        public float GroundFade = 0f;
+
         public bool IsEmpty => verts.Count == 0;
 
         void Quad(Vector3 bl, Vector3 br, Vector3 tl, Vector3 tr, Vector2 uvScale, Vector3 normal)
@@ -182,6 +187,40 @@ namespace IronDistrict
             }
         }
 
+        Color[] BakeVertexAO()
+        {
+            float minY = float.MaxValue;
+            for (int i = 0; i < verts.Count; i++) if (verts[i].y < minY) minY = verts[i].y;
+
+            var cols = new Color[verts.Count];
+            for (int i = 0; i < verts.Count; i++)
+            {
+                Vector3 v = verts[i];
+                Vector3 n = norms[i];
+
+                float ao = 1f;
+
+                // grime gradient near the ground
+                if (GroundFade > 0.01f)
+                {
+                    float h = Mathf.Clamp01((v.y - minY) / GroundFade);
+                    ao *= Mathf.Lerp(0.52f, 1f, Mathf.Sqrt(h));
+                }
+
+                // undersides and inward faces read darker
+                if (n.y < -0.35f) ao *= 0.72f;
+                else if (n.y > 0.95f) ao *= 0.93f;
+
+                // cheap per-vertex variation breaks the "plastic" look
+                float jitter = 0.955f + 0.045f * Mathf.PerlinNoise(v.x * 0.9f + 13.1f, v.z * 0.9f + 7.7f);
+                ao *= jitter;
+
+                ao = Mathf.Clamp01(ao);
+                cols[i] = new Color(ao, ao, ao, 1f);
+            }
+            return cols;
+        }
+
         public Mesh Build(string name = "mesh")
         {
             Mesh m = new Mesh { name = name };
@@ -189,6 +228,7 @@ namespace IronDistrict
             m.SetVertices(verts);
             m.SetNormals(norms);
             m.SetUVs(0, uvs);
+            if (BakeAO) m.SetColors(BakeVertexAO());
             int subCount = 0;
             for (int i = 0; i < triSub.Count; i++) subCount = Mathf.Max(subCount, triSub[i] + 1);
             if (subCount <= 1)
@@ -323,17 +363,26 @@ namespace IronDistrict
     public static class UIFont
     {
         static Font cached;
+
+        static readonly string[] OsFonts =
+        {
+            "Arial", "Segoe UI", "Tahoma", "Verdana", "Helvetica",
+            "Liberation Sans", "DejaVu Sans", "Noto Sans", "FreeSans"
+        };
+
         public static Font Get()
         {
             if (cached != null) return cached;
-            try { cached = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); } catch { }
+
+            // In a standalone build the OS font is the reliable path.
+            try { cached = Font.CreateDynamicFontFromOSFont(OsFonts, 24); } catch { }
             if (cached == null)
             {
-                try { cached = Resources.GetBuiltinResource<Font>("Arial.ttf"); } catch { }
+                try { cached = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); } catch { }
             }
             if (cached == null)
             {
-                try { cached = Font.CreateDynamicFontFromOSFont("Arial", 24); } catch { }
+                try { cached = Resources.GetBuiltinResource<Font>("Arial.ttf"); } catch { }
             }
             return cached;
         }

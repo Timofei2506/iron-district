@@ -48,6 +48,7 @@ namespace IronDistrict.EditorTools
         {
             "Standard",
             "IronDistrict/PostFX",
+            "IronDistrict/Surface",
             "Skybox/Procedural",
             "Legacy Shaders/Particles/Additive",
             "Legacy Shaders/Particles/Alpha Blended",

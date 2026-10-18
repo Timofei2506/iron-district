@@ -17,6 +17,7 @@ namespace IronDistrict
         public HUD Hud;
         public MenuController Menu;
         public SkyController Sky;
+        public Diagnostics Diag;
 
         bool worldReady;
         int seed = 1337;
@@ -41,6 +42,7 @@ namespace IronDistrict
 
             InputService.Sensitivity = PlayerPrefs.GetFloat("IrD_Sens", 1f);
             AudioListener.volume = PlayerPrefs.GetFloat("IrD_Vol", 0.9f);
+            Diag = gameObject.AddComponent<Diagnostics>();
             Sfx.Init(gameObject);
 
             var inputGo = new GameObject("Input");
@@ -73,7 +75,16 @@ namespace IronDistrict
 
         void Start()
         {
-            ShowMenu();
+            // Меню больше не может заблокировать игру: сразу уходим в мир.
+            Menu.Show();
+            StartCoroutine(AutoStart());
+        }
+
+        System.Collections.IEnumerator AutoStart()
+        {
+            yield return null;               // дать UI отрисоваться
+            yield return null;
+            if (State == GameState.Menu) StartGame();
         }
 
         // ------------------------------------------------------------- states
@@ -108,9 +119,12 @@ namespace IronDistrict
             BeginRun();
         }
 
+        float generatingSince;
+
         IEnumerator GenerateWorld()
         {
             State = GameState.Generating;
+            generatingSince = Time.realtimeSinceStartup;
             Menu.SetStatus("ГЕНЕРАЦИЯ ГОРОДА...");
             World.UnloadWorld();
             GameManager.I.ResetRun();
@@ -128,7 +142,18 @@ namespace IronDistrict
             yield return StartCoroutine(World.Generate(seed, s =>
             {
                 Menu.SetStatus("ГЕНЕРАЦИЯ: " + s);
+            }, e =>
+            {
+                Diag.ReportFatal(World.GenerationError ?? e.Message);
             }));
+
+            if (World.GenerationFailed)
+            {
+                State = GameState.Menu;
+                Menu.Show();
+                Menu.SetStatus("ОШИБКА ГЕНЕРАЦИИ — см. красную плашку внизу");
+                yield break;
+            }
 
             worldReady = true;
             Menu.SetStatus("");
@@ -233,6 +258,13 @@ namespace IronDistrict
         void Update()
         {
             TracerFx.Tick(Time.deltaTime);
+
+            if (State == GameState.Generating && Time.realtimeSinceStartup - generatingSince > 90f &&
+                Diag != null && Diag.FatalError == null)
+            {
+                Diag.ReportFatal("Генерация мира не завершилась за 90 секунд (зависание на шаге " +
+                                 (World != null && !string.IsNullOrEmpty(World.GenerationError) ? World.GenerationError : "неизвестно") + ")");
+            }
 
             switch (State)
             {
