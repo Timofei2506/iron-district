@@ -52,8 +52,9 @@
 | GitHub Actions (Windows x64) | ✅ **success** — `IronDistrict.exe` собран |
 | GitHub Actions (Linux x64) | ✅ **success** — `IronDistrict.x86_64` собран |
 | Лицензия Unity | ✅ Personal активируется на раннере по `UNITY_EMAIL` + `UNITY_PASSWORD` (unity-builder v6) |
-| Готовые билды | ⬇️ [Windows](https://github.com/Timofei2506/iron-district/releases/download/v1.0.1/IronDistrict-windows-x86_64.zip) · [Linux](https://github.com/Timofei2506/iron-district/releases/download/v1.0.1/IronDistrict-linux-x86_64.zip) |
-| Релиз | https://github.com/Timofei2506/iron-district/releases/tag/v1.0.1 |
+| Готовые билды (v1.1.0) | ⬇️ [Windows](https://github.com/Timofei2506/iron-district/releases/download/v1.1.0/IronDistrict-windows-x86_64.zip) · [Linux](https://github.com/Timofei2506/iron-district/releases/download/v1.1.0/IronDistrict-linux-x86_64.zip) |
+| Релиз | https://github.com/Timofei2506/iron-district/releases/tag/v1.1.0 |
+| Фиксы v1.1.0 | меню/движение (EventSystem), реалистичная картинка (ACES post-fx), аккуратная расстановка (бордюры, разметка, парковка) |
 | Сайт | https://iron-district-dh4.pages.dev |
 | Cloudflare R2 | ⛔ всё ещё не включён на аккаунте (шаг публикации в CI готов и не ломает сборку) |
 
