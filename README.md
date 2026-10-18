@@ -45,6 +45,25 @@
 
 ---
 
+## 0. Статус: СБОРКИ ЗЕЛЁНЫЕ ✅
+
+| Что | Статус |
+|---|---|
+| GitHub Actions (Windows x64) | ✅ **success** — `IronDistrict.exe` собран |
+| GitHub Actions (Linux x64) | ✅ **success** — `IronDistrict.x86_64` собран |
+| Лицензия Unity | ✅ Personal активируется на раннере по `UNITY_EMAIL` + `UNITY_PASSWORD` (unity-builder v6) |
+| Готовые билды | ⬇️ [Windows](https://github.com/Timofei2506/iron-district/releases/download/v1.0.1/IronDistrict-windows-x86_64.zip) · [Linux](https://github.com/Timofei2506/iron-district/releases/download/v1.0.1/IronDistrict-linux-x86_64.zip) |
+| Релиз | https://github.com/Timofei2506/iron-district/releases/tag/v1.0.1 |
+| Сайт | https://iron-district-dh4.pages.dev |
+| Cloudflare R2 | ⛔ всё ещё не включён на аккаунте (шаг публикации в CI готов и не ломает сборку) |
+
+Запуск Windows: распаковать `IronDistrict-windows-x86_64.zip` → `IronDistrict.exe`.
+Запуск Linux: распаковать, `chmod +x IronDistrict.x86_64`, запустить.
+
+Если игра падает при старте — лог лежит в `%USERPROFILE%\AppData\LocalLow\Iron District\Iron District\Player.log` (Windows) или `~/.config/unity3d/Iron District/Iron District/Player.log` (Linux).
+
+---
+
 ## 1. Сборка .exe без установки Unity — GitHub Actions
 
 > ⚠️ Для работы этого пути нужна **активация Unity на раннере**. Unity в 2025+ убрал ручную оффлайн-активацию Personal-лицензий, поэтому самый стабильный вариант — **локальная сборка** (раздел 2). CI-путь оставлен, если у тебя Unity Plus/Pro (тогда всё работает через `UNITY_SERIAL`) или если раннеру удаётся активировать Personal по email+паролю.
