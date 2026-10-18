@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IRON DISTRICT — процедурный шутер с открытым миром</title>
+<meta name="description" content="Iron District — FPS с открытым миром 1×1 км, который генерируется кодом. Город, промзона, деревня, лес. Unity 2022.3 LTS.">
+<meta property="og:title" content="IRON DISTRICT">
+<meta property="og:description" content="Процедурный шутер с открытым миром на Unity.">
+<style>
+  :root{
+    --bg:#0b0d10; --bg2:#0f1216; --line:#1e242b; --txt:#e9e6df; --dim:#8d8a83;
+    --accent:#ff8a2a; --accent2:#ffb46b; --danger:#e2452f;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);
+    font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;overflow-x:hidden}
+  a{color:inherit;text-decoration:none}
+  .mono{font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace}
+
+  /* ---------- backdrop ---------- */
+  .bg{position:fixed;inset:0;z-index:-2;background:
+      radial-gradient(1200px 600px at 78% -10%, rgba(255,138,42,.16), transparent 60%),
+      radial-gradient(900px 500px at 10% 110%, rgba(58,110,165,.14), transparent 60%),
+      linear-gradient(180deg,#0b0d10 0%, #0b0d10 55%, #0d0f13 100%)}
+  .grid{position:fixed;inset:-2px;z-index:-1;pointer-events:none;opacity:.5;
+    background-image:linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(255,255,255,.028) 1px,transparent 1px);
+    background-size:64px 64px;
+    mask-image:radial-gradient(ellipse at 50% 0%, #000 35%, transparent 78%);
+    -webkit-mask-image:radial-gradient(ellipse at 50% 0%, #000 35%, transparent 78%)}
+
+  .wrap{max-width:1160px;margin:0 auto;padding:0 28px}
+  section{padding:84px 0;border-top:1px solid var(--line)}
+  h2{font-size:13px;letter-spacing:.28em;color:var(--accent);font-weight:700;margin:0 0 26px;text-transform:uppercase}
+
+  /* ---------- hero ---------- */
+  header{padding:26px 0 0}
+  .nav{display:flex;align-items:center;justify-content:space-between;font-size:12px;letter-spacing:.22em;color:var(--dim)}
+  .nav .role{display:flex;gap:26px}
+  .nav a:hover{color:var(--txt)}
+  .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);
+    box-shadow:0 0 14px var(--accent);margin-right:9px;vertical-align:1px}
+
+  .hero{padding:74px 0 90px;position:relative}
+  .kicker{font-size:12px;letter-spacing:.34em;color:var(--dim);margin-bottom:22px}
+  h1{margin:0;font-size:clamp(46px,9.4vw,124px);line-height:.92;letter-spacing:-.03em;font-weight:800}
+  h1 .out{color:transparent;-webkit-text-stroke:1.6px var(--accent);text-stroke:1.6px var(--accent)}
+  .tag{margin:26px 0 0;max-width:620px;font-size:17px;line-height:1.65;color:#c9c5bd}
+  .tag b{color:var(--txt)}
+  .cta{display:flex;flex-wrap:wrap;gap:14px;margin-top:38px}
+  .btn{border:1px solid var(--line);padding:15px 26px;font-size:13px;letter-spacing:.16em;
+    text-transform:uppercase;font-weight:700;transition:.16s;background:rgba(255,255,255,.02)}
+  .btn.primary{background:var(--accent);color:#150c04;border-color:var(--accent)}
+  .btn.primary:hover{background:var(--accent2);box-shadow:0 10px 40px rgba(255,138,42,.22)}
+  .btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+  .stats{display:flex;flex-wrap:wrap;gap:40px;margin-top:58px}
+  .stat b{display:block;font-size:30px;letter-spacing:-.02em}
+  .stat span{font-size:11px;letter-spacing:.2em;color:var(--dim);text-transform:uppercase}
+
+  /* ---------- cards ---------- */
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1px;background:var(--line)}
+  .card{background:var(--bg2);padding:30px 26px 34px;min-height:186px;transition:.18s;position:relative}
+  .card:hover{background:#12161b}
+  .card .n{font-size:11px;letter-spacing:.24em;color:var(--accent);margin-bottom:16px}
+  .card h3{margin:0 0 12px;font-size:19px;letter-spacing:-.01em}
+  .card p{margin:0;color:var(--dim);font-size:14px;line-height:1.6}
+
+  /* ---------- textures strip ---------- */
+  .strip{border:1px solid var(--line);overflow:hidden;margin-top:8px}
+  .strip img{display:block;width:100%;image-rendering:auto;filter:saturate(.92)}
+  .caption{margin-top:12px;font-size:12px;color:var(--dim);letter-spacing:.06em}
+
+  /* ---------- two column ---------- */
+  .duo{display:grid;grid-template-columns:1.05fr .95fr;gap:64px;align-items:start}
+  .list{list-style:none;margin:0;padding:0}
+  .list li{padding:15px 0;border-bottom:1px solid var(--line);display:flex;gap:16px;font-size:15px;color:#c9c5bd}
+  .list li:last-child{border-bottom:0}
+  .list .k{color:var(--accent);min-width:132px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;padding-top:3px}
+
+  table.keys{width:100%;border-collapse:collapse;font-size:14px}
+  table.keys td{padding:11px 0;border-bottom:1px solid var(--line);color:#c9c5bd}
+  table.keys td:first-child{width:150px}
+  kbd{display:inline-block;border:1px solid #2a3138;border-bottom-width:2px;border-radius:4px;
+    padding:3px 8px;font:600 12px/1 ui-monospace,Consolas,monospace;color:var(--txt);background:#13171c}
+
+  /* ---------- roadmap ---------- */
+  .road{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1px;background:var(--line)}
+  .step{background:var(--bg2);padding:26px 24px}
+  .step .s{font-size:11px;letter-spacing:.22em;color:var(--dim)}
+  .step h4{margin:10px 0 8px;font-size:16px}
+  .step p{margin:0;font-size:13.5px;color:var(--dim);line-height:1.55}
+  .badge{display:inline-block;margin-top:14px;font-size:10px;letter-spacing:.18em;padding:5px 9px;
+    border:1px solid #2a3138;color:var(--dim);text-transform:uppercase}
+  .badge.now{color:#1a1005;background:var(--accent);border-color:var(--accent);font-weight:800}
+
+  footer{border-top:1px solid var(--line);padding:36px 0 54px;color:var(--dim);font-size:12.5px;letter-spacing:.06em}
+  footer .row{display:flex;flex-wrap:wrap;gap:18px;justify-content:space-between}
+  footer a:hover{color:var(--accent)}
+
+  @media(max-width:820px){
+    .duo{grid-template-columns:1fr;gap:34px}
+    .nav .role{display:none}
+    section{padding:58px 0}
+    .stats{gap:26px}
+  }
+</style>
+</head>
+<body>
+<div class="bg"></div><div class="grid"></div>
+
+<header class="wrap">
+  <div class="nav mono">
+    <div><span class="dot"></span>IRON DISTRICT / DEV BUILD</div>
+    <div class="role">
+      <a href="#world">МИР</a><a href="#tech">ТЕХНОЛОГИИ</a><a href="#controls">УПРАВЛЕНИЕ</a><a href="#roadmap">ПЛАН</a>
+    </div>
+  </div>
+
+  <div class="hero">
+    <div class="kicker mono">ПРОЦЕДУРНЫЙ FPS · ОТКРЫТЫЙ МИР 1×1 КМ · UNITY 2022.3 LTS</div>
+    <h1>IRON<br><span class="out">DISTRICT</span></h1>
+    <p class="tag">Город, промзона, деревня и лес — <b>всё генерируется кодом</b> при каждом запуске.
+      Ни одного купленного ассета: текстуры, меши и звуки созданы процедурно. Волны противников,
+      оружие с отдачей и прицеливанием, рекорд в таблице.</p>
+    <div class="cta">
+      <a class="btn primary" href="#world">Смотреть, что внутри</a>
+      <a class="btn ghost" href="https://github.com/Timofei2506" target="_blank" rel="noopener">Следить за разработкой</a>
+    </div>
+    <div class="stats mono">
+      <div class="stat"><b>1×1 км</b><span>размер мира</span></div>
+      <div class="stat"><b>0</b><span>внешних ассетов</span></div>
+      <div class="stat"><b>~5 000</b><span>строк C#</span></div>
+      <div class="stat"><b>∞</b><span>волн противников</span></div>
+    </div>
+  </div>
+</header>
+
+<section id="world" class="wrap">
+  <h2>Что внутри</h2>
+  <div class="cards">
+    <div class="card"><div class="n mono">01 / МИР</div><h3>Четыре района</h3>
+      <p>Даунтаун с небоскрёбами и светящимися окнами, промзона с ангарами и цистернами, деревня с домами и колодцем, лес и горы по периметру.</p></div>
+    <div class="card"><div class="n mono">02 / ГРАФИКА</div><h3>PBR без загрузок</h3>
+      <p>Albedo + normal + metallic, линейное цветовое пространство, мягкие тени, туман, небо «золотой час» и эмиссивные окна.</p></div>
+    <div class="card"><div class="n mono">03 / ОРУЖИЕ</div><h3>AR-7</h3>
+      <p>Автоматический огонь, ADS, разброс с bloom, отдача, перезарядка с анимацией магазина, трассеры, декали от пуль.</p></div>
+    <div class="card"><div class="n mono">04 / ИИ</div><h3>Патруль → бой</h3>
+      <p>NavMesh-патрули, погоня, стрейф вокруг игрока, стрельба очередями, хитбокс головы ×2.1. Сложность растёт с волнами.</p></div>
+    <div class="card"><div class="n mono">05 / ГЕЙМПЛЕЙ</div><h3>Волны и очки</h3>
+      <p>Бесконечные волны, очки за убийства и хедшоты, аптечки и патроны, рекорд сохраняется между запусками.</p></div>
+    <div class="card"><div class="n mono">06 / СБОРКА</div><h3>Готово к билду</h3>
+      <p>GitHub Actions на Windows и Linux, локальные скрипты сборки, автоматическая сцена и настройки импорта. Игра собирается «из коробки».</p></div>
+  </div>
+
+  <div style="margin-top:46px">
+    <div class="strip"><img src="assets/textures.png" alt="Процедурные PBR-текстуры: бетон, асфальт, кирпич, металл, ржавчина, трава и карты нормалей"></div>
+    <div class="caption mono">ПРОЦЕДУРНЫЕ PBR-ТЕКСТУРЫ · ALBEDO + NORMAL · СГЕНЕРИРОВАНЫ СКРИПТОМ</div>
+  </div>
+</section>
+
+<section id="tech" class="wrap">
+  <h2>Технологии</h2>
+  <div class="duo">
+    <ul class="list">
+      <li><span class="k">Мир</span><span>Генератор города: блоки, парцеллы зданий, сетки окон, крышные детали, дороги, заборы, пропсы и navmesh-полигон — за один проход.</span></li>
+      <li><span class="k">Ассеты</span><span>Python-генератор текстур и звуков: бетон, кирпич, металл, ржавчина, дерево, песок, hazard-разметка, выстрелы, шаги, ветер.</span></li>
+      <li><span class="k">Рендер</span><span>Standard-шейдер, instancing, MSAA 4×, soft shadows, линейное пространство, авто-снижение качества при просадке FPS.</span></li>
+      <li><span class="k">ИИ</span><span>NavMeshAgent + собственный сенсор видимости, стрейф-логика, стрельба очередями с промахами, тиры сложности по волнам.</span></li>
+      <li><span class="k">Код</span><span>Всё создаётся в рантайме: сцена пустая, поэтому проект невозможно «сломать» потерянными ссылками.</span></li>
+    </ul>
+    <div>
+      <table class="keys">
+        <tr><td class="mono">ДВИЖЕНИЕ</td><td><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd></td></tr>
+        <tr><td class="mono">БЕГ</td><td><kbd>SHIFT</kbd></td></tr>
+        <tr><td class="mono">ПРЫЖОК</td><td><kbd>SPACE</kbd></td></tr>
+        <tr><td class="mono">ОГОНЬ</td><td><kbd>ЛКМ</kbd></td></tr>
+        <tr><td class="mono">ПРИЦЕЛ</td><td><kbd>ПКМ</kbd></td></tr>
+        <tr><td class="mono">ПЕРЕЗАРЯДКА</td><td><kbd>R</kbd></td></tr>
+        <tr><td class="mono">ПАУЗА</td><td><kbd>ESC</kbd></td></tr>
+      </table>
+      <p class="caption" style="margin-top:18px">Дев-билд для Windows · Unity 2022.3 LTS</p>
+    </div>
+  </div>
+</section>
+
+<section id="roadmap" class="wrap">
+  <h2>План разработки</h2>
+  <div class="road">
+    <div class="step"><div class="s mono">ШАГ 01</div><h4>Играбельный прототип</h4>
+      <p>Мир, стрельба, ИИ, волны, UI. Собранная сцена без ручной настройки.</p><div class="badge now">ГОТОВО</div></div>
+    <div class="step"><div class="s mono">ШАГ 02</div><h4>Контент</h4>
+      <p>Скелетная анимация врагов, второе оружие, гранаты, миникарта, боссы волн.</p><div class="badge">В РАБОТЕ</div></div>
+    <div class="step"><div class="s mono">ШАГ 03</div><h4>Полировка</h4>
+      <p>Баланс, оптимизация, звук, трейлер и вишлист-страница Steam.</p><div class="badge">ДАЛЬШЕ</div></div>
+    <div class="step"><div class="s mono">ШАГ 04</div><h4>Релиз</h4>
+      <p>Билд, страница магазина, сообщество, первые патчи.</p><div class="badge">ЦЕЛЬ</div></div>
+  </div>
+</section>
+
+<footer class="wrap">
+  <div class="row mono">
+    <div>© 2026 IRON DISTRICT · DEV BUILD</div>
+    <div>UNITY 2022.3 LTS · ПРОЦЕДУРНЫЕ АССЕТЫ · <a href="https://github.com/Timofei2506" target="_blank" rel="noopener">GITHUB</a></div>
+  </div>
+</footer>
+</body>
+</html>

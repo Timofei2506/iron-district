@@ -21,6 +21,30 @@
 
 ---
 
+## 0. Инфраструктура проекта (уже настроено)
+
+| Что | Статус | Ссылка |
+|---|---|---|
+| GitHub-репозиторий | ✅ создан, код залит (private) | https://github.com/Timofei2506/iron-district |
+| Релиз v1.0.0 с архивом проекта | ✅ опубликован | https://github.com/Timofei2506/iron-district/releases/tag/v1.0.0 |
+| Секреты R2 в репозитории | ✅ добавлены (`R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`) | Settings → Secrets → Actions |
+| CI: автопубликация билдов в R2 | ✅ в workflow, ждёт включения R2 | `.github/workflows/build.yml` |
+| Сайт-визитка (Cloudflare Pages) | ✅ задеплоен | https://iron-district-dh4.pages.dev |
+| GitHub Actions сборка | ⛔ блокировка на стороне GitHub: *«recent account payments have failed or your spending limit needs to be increased»* | https://github.com/settings/billing |
+| Cloudflare R2 | ⛔ не включён на аккаунте: *«Please enable R2 through the Cloudflare Dashboard»* | https://dash.cloudflare.com/3a6eeef666b57507d834a828fc6cd883/r2 |
+
+Что нужно сделать руками (2 действия):
+
+1. **GitHub Actions.** Открыть https://github.com/settings/billing → проверить платёжный метод / Spending limit
+   (Settings → Billing and plans → Spending limits). Пока лимит 0 и платёж не проходит, джобы не запускаются вообще.
+   Альтернатива без оплаты: сделать репозиторий **публичным** — для публичных репозиториев минуты Actions бесплатны и без лимита.
+2. **Cloudflare R2.** Открыть https://dash.cloudflare.com/3a6eeef666b57507d834a828fc6cd883/r2 → **Enable R2**
+   (бесплатный тариф, но нужно привязать карту). После этого бакет `iron-district-builds` создастся сам при первой загрузке.
+
+После этих двух шагов билд запускается одной кнопкой (Actions → Run workflow), а готовые `.exe` автоматически уезжают в R2.
+
+---
+
 ## 1. Сборка .exe без установки Unity — GitHub Actions
 
 > ⚠️ Для работы этого пути нужна **активация Unity на раннере**. Unity в 2025+ убрал ручную оффлайн-активацию Personal-лицензий, поэтому самый стабильный вариант — **локальная сборка** (раздел 2). CI-путь оставлен, если у тебя Unity Plus/Pro (тогда всё работает через `UNITY_SERIAL`) или если раннеру удаётся активировать Personal по email+паролю.
