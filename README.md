@@ -27,7 +27,7 @@
 |---|---|---|
 | GitHub-репозиторий | ✅ создан, код залит, **публичный** | https://github.com/Timofei2506/iron-district |
 | GitHub Actions сборка | ✅ работает (публичный репозиторий → минуты бесплатны) | Actions → Build |
-| Готовые билды | ✅ v1.2.0, Windows + Linux | https://github.com/Timofei2506/iron-district/releases/tag/v1.2.0 |
+| Готовые билды | ✅ v1.2.1, Windows + Linux | https://github.com/Timofei2506/iron-district/releases/tag/v1.2.1 |
 | Секреты Unity в репозитории | ✅ `UNITY_EMAIL`, `UNITY_PASSWORD` (activation unity-builder v6) | Settings → Secrets → Actions |
 | Секреты R2 в репозитории | ✅ добавлены (`R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`) | Settings → Secrets → Actions |
 | CI: публикация билдов в R2 | ⏸ в workflow, шаг необязательный — не ломает сборку | `.github/workflows/build.yml` |
@@ -46,9 +46,9 @@
 | GitHub Actions (Windows x64) | ✅ **success** — `IronDistrict.exe` собран |
 | GitHub Actions (Linux x64) | ✅ **success** — `IronDistrict.x86_64` собран |
 | Лицензия Unity | ✅ Personal активируется на раннере по `UNITY_EMAIL` + `UNITY_PASSWORD` (unity-builder v6) |
-| Готовые билды (v1.2.0) | ⬇️ [Windows](https://github.com/Timofei2506/iron-district/releases/download/v1.2.0/IronDistrict-windows-x86_64.zip) · [Linux](https://github.com/Timofei2506/iron-district/releases/download/v1.2.0/IronDistrict-linux-x86_64.zip) |
-| Релиз | https://github.com/Timofei2506/iron-district/releases/tag/v1.2.0 |
-| Фиксы v1.2.0 | автозапуск без меню, экранная диагностика (FPS/позиция/ввод), шейдер с запечённым AO, город периметрами кварталов, спавн ближе к центру, шаговая генерация с показом ошибок |
+| Готовые билды (v1.2.1) | ⬇️ [Windows](https://github.com/Timofei2506/iron-district/releases/download/v1.2.1/IronDistrict-windows-x86_64.zip) · [Linux](https://github.com/Timofei2506/iron-district/releases/download/v1.2.1/IronDistrict-linux-x86_64.zip) |
+| Релиз | https://github.com/Timofei2506/iron-district/releases/tag/v1.2.1 |
+| Фиксы v1.2.1 | автозапуск без меню, экранная диагностика (FPS/позиция/ввод), шейдер с запечённым AO, город периметрами кварталов, спавн ближе к центру, шаговая генерация с показом ошибок |
 | Сайт | https://iron-district-dh4.pages.dev |
 | Cloudflare R2 | ⛔ всё ещё не включён на аккаунте (шаг публикации в CI готов и не ломает сборку) |
 
