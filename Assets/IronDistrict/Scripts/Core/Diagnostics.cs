@@ -57,7 +57,7 @@ namespace IronDistrict
             var inp = InputService.I;
 
             string text =
-                $"IRON DISTRICT · {state}\n" +
+                $"IRON DISTRICT v{GameRoot.Version} · {state}\n" +
                 $"FPS {fpsSmoothed:0}\n" +
                 $"POS {pos.x:0.0} {pos.y:0.0} {pos.z:0.0}\n" +
                 (inp != null

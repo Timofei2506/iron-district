@@ -10,6 +10,9 @@ namespace IronDistrict
 
         public static GameRoot I;
 
+        /// <summary>Build version, shown in the menu and the diagnostics overlay.</summary>
+        public const string Version = "1.2.1";
+
         public GameState State { get; private set; } = GameState.Menu;
         public PlayerController Player;
         public WorldGenerator World;

@@ -74,7 +74,7 @@ namespace IronDistrict
             statusText = Txt("Status", canvasGo.transform, "", 18, TextAnchor.MiddleLeft, Palette.Accent, FontStyle.Bold);
             SetRect(statusText.rectTransform, new Vector2(0, 0), new Vector2(0, 0), new Vector2(103, 34), new Vector2(900, 30));
 
-            var ver = Txt("Ver", canvasGo.transform, "v1.0 · procedural · IronDistrict", 14, TextAnchor.LowerRight, new Color(1f, 1f, 1f, 0.35f));
+            var ver = Txt("Ver", canvasGo.transform, "v" + GameRoot.Version + " · procedural · IronDistrict", 16, TextAnchor.LowerRight, new Color(1f, 1f, 1f, 0.55f));
             SetRect(ver.rectTransform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-24, 18), new Vector2(600, 24));
 
             RefreshLabels();
